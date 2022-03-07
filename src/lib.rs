@@ -1,2 +1,2 @@
-pub mod share_account;
-pub mod share_account_grpc;
+pub mod service;
+pub mod service_grpc;

@@ -1,35 +1,51 @@
 use std::env;
 use std::thread;
+use std::time;
 
-use share_account::share_account::*;
-use share_account::share_account_grpc::*;
+use share_account::service::*;
+use share_account::service_grpc::*;
 
 use grpc::ServerRequestSingle;
-use grpc::ServerResponseUnarySink;
+use grpc::ServerResponseSink;
 use grpc::ServerHandlerContext;
 
-struct GreeterImpl;
+struct AccountShareImpl;
 
-impl Greeter for GreeterImpl {
+impl AccountShare for AccountShareImpl {
     // rpc for service
-    fn say_hello(
+    fn web_request(
         &self,
         _: ServerHandlerContext,
-        req: ServerRequestSingle<HelloRequest>,
-        resp: ServerResponseUnarySink<HelloReply>,
+        _req: ServerRequestSingle<Empty>,
+        mut resp: ServerResponseSink<Data>,
     ) -> grpc::Result<()> {
         // create Response
-        let mut r = HelloReply::new();
-        let name = if req.message.get_name().is_empty() {
-            "world"
-        } else {
-            req.message.get_name()
-        };
+        let mut r = Data::new();
+        let name = "world";
         // sent the response
         println!("greeting request from {}", name);
-        r.set_message(format!("Hello {}", name));
-        resp.finish(r)
+        r.set_urlscheme(format!("Hello {}", name));
+
+        thread::sleep(time::Duration::from_millis(4000));
+
+        resp.send_data(r.clone())
     }
+
+    fn phone_request(
+        &self,
+        _: ServerHandlerContext,
+        _req: ServerRequestSingle<Empty>,
+        mut resp: ServerResponseSink<Data>,
+    ) -> grpc::Result<()> {
+        // create Response
+        let mut r = Data::new();
+        let name = "world";
+        // sent the response
+        println!("greeting request from {}", name);
+        r.set_urlscheme(format!("Hello {}", name));
+        resp.send_data(r.clone())
+    }
+
 }
 
 fn main() {
@@ -39,7 +55,7 @@ fn main() {
     // adding port to server for http
     server.http.set_port(port);
     // adding say service to server
-    server.add_service(GreeterServer::new_service_def(GreeterImpl));
+    server.add_service(AccountShareServer::new_service_def(AccountShareImpl));
     // running the server
     let _server = server.build().expect("server");
     println!(

@@ -15,6 +15,10 @@ futures         = "~0.3"
 grpc-protobuf   = "0.8.3"
 httpbis         = { git = "https://github.com/stepancheg/rust-http2", rev = "04410b1a07f937d94e075c813d05a68022f0c7c8" }
 env_logger      = "~0.9"
+tonic           = "0.6.2"
+anyhow          = "1.0.40"
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
 
 [build-dependencies]
 protoc-rust-grpc = "0.8.3"
@@ -26,3 +30,7 @@ path="./src/server.rs"
 [[bin]]
 name="client"
 path="./src/client.rs"
+
+[[bin]]
+name="main"
+path="./src/main.rs"

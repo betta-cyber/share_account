@@ -1,0 +1,14 @@
+syntax = "proto3";  // 声明使用 proto3 语法
+
+package AccountShare;
+
+message Data{
+  string urlscheme = 1;
+}
+
+message Empty {}
+
+service AccountShare {
+  rpc webRequest (Empty) returns (stream Data) {}
+  rpc phoneRequest(Empty) returns (stream Data) {}
+}
