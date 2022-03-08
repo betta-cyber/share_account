@@ -2,68 +2,74 @@ use std::env;
 use std::thread;
 use std::time;
 
-use share_account::service::*;
-use share_account::service_grpc::*;
+use tonic::{transport::Server, Request, Response, Status};
+
+use share_account_mod::*;
+
+pub mod share_account_mod {
+    tonic::include_proto!("share_account");
+}
 
 use grpc::ServerRequestSingle;
 use grpc::ServerResponseSink;
 use grpc::ServerHandlerContext;
 
-struct AccountShareImpl;
+#[derive(Default)]
+pub struct ShareAccountImpl {}
 
-impl AccountShare for AccountShareImpl {
+#[tonic::async_trait]
+impl share_account_server::ShareAccount for ShareAccountImpl {
     // rpc for service
-    fn web_request(
+    async fn web_request(
         &self,
-        _: ServerHandlerContext,
-        _req: ServerRequestSingle<Empty>,
-        mut resp: ServerResponseSink<Data>,
-    ) -> grpc::Result<()> {
+        _req: Request<Empty>,
+    ) -> Result<Response<Data>, Status> {
         // create Response
-        let mut r = Data::new();
+        // let mut r = Data::new();
+        let reply = Data {
+            urlscheme: format!("world"),
+        };
         let name = "world";
         // sent the response
         println!("greeting request from {}", name);
-        r.set_urlscheme(format!("Hello {}", name));
+        // r.set_urlscheme(format!("Hello {}", name));
 
-        thread::sleep(time::Duration::from_millis(4000));
+        // thread::sleep(time::Duration::from_millis(4000));
 
-        resp.send_data(r.clone())
+        Ok(Response::new(reply))
     }
 
-    fn phone_request(
+    async fn phone_request(
         &self,
-        _: ServerHandlerContext,
-        _req: ServerRequestSingle<Empty>,
-        mut resp: ServerResponseSink<Data>,
-    ) -> grpc::Result<()> {
+        _req: Request<Empty>,
+    ) -> Result<Response<Data>, Status> {
         // create Response
-        let mut r = Data::new();
-        let name = "world";
+        // let mut r = Data::new();
+        let reply = Data {
+            urlscheme: format!("111111 world"),
+        };
+        let name = " 11111 1world";
         // sent the response
         println!("greeting request from {}", name);
-        r.set_urlscheme(format!("Hello {}", name));
-        resp.send_data(r.clone())
-    }
+        // r.set_urlscheme(format!("Hello {}", name));
 
+        // thread::sleep(time::Duration::from_millis(4000));
+
+        Ok(Response::new(reply))
+    }
 }
 
-fn main() {
-    let port =50051;
-    // creating server
-    let mut server = grpc::ServerBuilder::new_plain();
-    // adding port to server for http
-    server.http.set_port(port);
-    // adding say service to server
-    server.add_service(AccountShareServer::new_service_def(AccountShareImpl));
-    // running the server
-    let _server = server.build().expect("server");
-    println!(
-        "greeter server started on port {}",
-        port,
-    );
-    // stopping the program from finishing
-    loop {
-        std::thread::park();
-    }
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "[::1]:50051".parse().unwrap();
+    let share_server = ShareAccountImpl::default();
+
+    println!("GreeterServer listening on {}", addr);
+
+    Server::builder()
+        .add_service(share_account_server::ShareAccountServer::new(share_server))
+        .serve(addr)
+        .await?;
+
+    Ok(())
 }
