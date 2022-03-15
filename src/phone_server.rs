@@ -25,25 +25,16 @@ impl share_account_server::ShareAccount for ShareAccountImpl {
         _req: Request<Empty>,
     ) -> Result<Response<Data>, Status> {
         // create Response
-        let mut client = share_account_client::ShareAccountClient::connect("http://[::1]:50052").await.unwrap();
-        let req = tonic::Request::new(
-            Empty {}
-        );
-
-        // send the request
-        let resp = client.phone_request(req).await;
-        // let a = resp.unwrap().into_inner();
-
-        let res = match resp {
-            Ok(r) => r.into_inner().urlscheme,
-            Err(_) => "error".to_owned(),
-        };
-
+        // let mut r = Data::new();
         let reply = Data {
-            urlscheme: res,
+            urlscheme: format!("world"),
         };
-        println!("greeting request from {:#?}", reply);
+        let name = "world";
+        // sent the response
+        println!("greeting request from {}", name);
         // r.set_urlscheme(format!("Hello {}", name));
+
+        // thread::sleep(time::Duration::from_millis(4000));
 
         Ok(Response::new(reply))
     }
@@ -55,22 +46,19 @@ impl share_account_server::ShareAccount for ShareAccountImpl {
         // create Response
         // let mut r = Data::new();
         let reply = Data {
-            urlscheme: format!("111111 world"),
+            urlscheme: format!("111111 xxxxxx"),
         };
-        let name = " 11111 1world";
+        let name = " 11111 1 xxxxx";
         // sent the response
         println!("greeting request from {}", name);
         // r.set_urlscheme(format!("Hello {}", name));
-
-        // thread::sleep(time::Duration::from_millis(4000));
-
         Ok(Response::new(reply))
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse().unwrap();
+    let addr = "[::1]:50052".parse().unwrap();
     let share_server = ShareAccountImpl::default();
 
     println!("GreeterServer listening on {}", addr);

@@ -37,8 +37,8 @@ name="server"
 path="./src/server.rs"
 
 [[bin]]
-name="client"
-path="./src/client.rs"
+name="phone"
+path="./src/phone_server.rs"
 
 [[bin]]
 name="main"
