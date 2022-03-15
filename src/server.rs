@@ -1,7 +1,9 @@
-use std::env;
-use std::thread;
-use std::time;
+#[macro_use]
+extern crate lazy_static;
+extern crate log;
 
+use log::{debug, info};
+use config::Config;
 use tonic::{transport::Server, Request, Response, Status};
 
 use share_account_mod::*;
@@ -10,9 +12,13 @@ pub mod share_account_mod {
     tonic::include_proto!("share_account");
 }
 
-use grpc::ServerRequestSingle;
-use grpc::ServerResponseSink;
-use grpc::ServerHandlerContext;
+lazy_static! {
+    static ref SETTINGS: Config = Config::builder()
+        .add_source(config::File::with_name("Settings"))
+        .build()
+        .unwrap();
+
+}
 
 #[derive(Default)]
 pub struct ShareAccountImpl {}
@@ -25,14 +31,17 @@ impl share_account_server::ShareAccount for ShareAccountImpl {
         _req: Request<Empty>,
     ) -> Result<Response<Data>, Status> {
         // create Response
-        let mut client = share_account_client::ShareAccountClient::connect("http://[::1]:50052").await.unwrap();
+        let mut phone_grpc = "http://".to_string();
+        let phone_grpc_addr = SETTINGS.get_string("phone_grpc_addr").unwrap();
+        phone_grpc += &phone_grpc_addr;
+
+        let mut client = share_account_client::ShareAccountClient::connect(phone_grpc).await.unwrap();
         let req = tonic::Request::new(
             Empty {}
         );
 
         // send the request
         let resp = client.phone_request(req).await;
-        // let a = resp.unwrap().into_inner();
 
         let res = match resp {
             Ok(r) => r.into_inner().urlscheme,
@@ -42,8 +51,7 @@ impl share_account_server::ShareAccount for ShareAccountImpl {
         let reply = Data {
             urlscheme: res,
         };
-        println!("greeting request from {:#?}", reply);
-        // r.set_urlscheme(format!("Hello {}", name));
+        debug!("get request from {:#?}", reply);
 
         Ok(Response::new(reply))
     }
@@ -59,21 +67,20 @@ impl share_account_server::ShareAccount for ShareAccountImpl {
         };
         let name = " 11111 1world";
         // sent the response
-        println!("greeting request from {}", name);
+        debug!("get request from {:#?}", name);
         // r.set_urlscheme(format!("Hello {}", name));
-
-        // thread::sleep(time::Duration::from_millis(4000));
-
         Ok(Response::new(reply))
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse().unwrap();
+    env_logger::init();
+    let server_grpc_addr = SETTINGS.get_string("server_grpc_addr").unwrap();
+    let addr = server_grpc_addr.parse().unwrap();
     let share_server = ShareAccountImpl::default();
 
-    println!("GreeterServer listening on {}", addr);
+    info!("share account listening on {}", addr);
 
     Server::builder()
         .add_service(share_account_server::ShareAccountServer::new(share_server))

@@ -1,0 +1,4 @@
+debug = false
+phone_grpc_addr = "[::1]:50052"
+server_grpc_addr = "[::1]:50051"
+server_addr = "0.0.0.0:3000"

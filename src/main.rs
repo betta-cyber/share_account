@@ -1,89 +1,62 @@
 #![deny(warnings)]
 
-// use std::io;
-// use std::convert::Infallible;
-// use std::str::FromStr;
-// use std::time::Duration;
+#[macro_use]
+extern crate lazy_static;
+extern crate log;
+
+use config::Config;
 use axum::{
     routing::get,
     Router,
 };
-// use tonic::transport::Channel;
-// use tonic::Request;
 
 use share_account_mod::*;
-
-// use grpc::ClientStub;
-// use grpc::ClientStubExt;
-// use futures::executor;
+use log::debug;
 
 pub mod share_account_mod {
     tonic::include_proto!("share_account");
 }
 
+lazy_static! {
+    static ref SETTINGS: Config = Config::builder()
+        .add_source(config::File::with_name("Settings"))
+        .build()
+        .unwrap();
+
+}
+
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+    let server_addr = SETTINGS.get_string("server_addr").unwrap();
+
     let app = Router::new()
         .route("/", get(get_grpc_result));
 
     // run it with hyper on localhost:3000
-    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+    axum::Server::bind(&server_addr.parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
 async fn get_grpc_result<'x>() -> String {
-    // let port = 50051;
-    // let grpc_client =  Arc::new(
-        // grpc::ClientBuilder::new("::1", port) .build()
-        // .unwrap(),
-    // );
-    // let client = AccountShareClient::with_client(grpc_client);
+    let mut server_grpc = "http://".to_string();
+    let server_grpc_config = SETTINGS.get_string("server_grpc_addr").unwrap();
+    server_grpc += &server_grpc_config;
 
-    let mut client = share_account_client::ShareAccountClient::connect("http://[::1]:50051").await.unwrap();
+    let mut client = share_account_client::ShareAccountClient::connect(server_grpc).await.unwrap();
     let req = tonic::Request::new(
         Empty {}
     );
 
     // send the request
     let resp = client.web_request(req).await;
-    // let a = resp.unwrap().into_inner();
-
-    // while let Some(note) = a.message().await.unwrap() {
-        // println!("NOTE = {:?}", note);
-    // }
     let res = match resp {
         Ok(r) => r.into_inner().urlscheme,
         Err(_) => "error".to_owned(),
     };
+    debug!("{:#?}", res);
     return res.to_string()
 }
-
-
-// async fn sleepy(Seconds(seconds): Seconds) -> Result<impl warp::Reply, Infallible> {
-
-    // let url = get_grpc_result().await;
-    // println!("11111");
-
-    // tokio::time::sleep(Duration::from_secs(seconds)).await;
-    // Ok(format!("I waited {} seconds! {}", seconds, url))
-// }
-
-// /// A newtype to enforce our maximum allowed seconds.
-// struct Seconds(u64);
-
-// impl FromStr for Seconds {
-    // type Err = ();
-    // fn from_str(src: &str) -> Result<Self, Self::Err> {
-        // src.parse::<u64>().map_err(|_| ()).and_then(|num| {
-            // if num <= 5 {
-                // Ok(Seconds(num))
-            // } else {
-                // Err(())
-            // }
-        // })
-    // }
-// }
-
